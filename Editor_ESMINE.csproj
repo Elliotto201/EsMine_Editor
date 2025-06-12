@@ -9,8 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+    <PackageReference Include="IronPython" Version="3.4.2" />
+    <PackageReference Include="IronPython.Interpreter" Version="2.7.4" />
     <PackageReference Include="OpenTK" Version="4.9.4" />
     <PackageReference Include="OpenTK.GLControl" Version="4.0.2" />
+    <PackageReference Include="Python.Runtime" Version="2.7.9" />
     <PackageReference Include="StbImageSharp" Version="2.30.15" />
   </ItemGroup>
 
