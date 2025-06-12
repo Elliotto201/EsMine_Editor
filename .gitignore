@@ -1,0 +1,64 @@
+## Ignore build results
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]og/
+
+## Ignore user-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+
+## Ignore Visual Studio folders
+.vs/
+.vscode/
+
+## Ignore test results
+TestResults/
+*.coverage
+*.coveragexml
+*.log
+
+## Ignore temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+
+## Ignore NuGet packages
+*.nupkg
+*.snupkg
+packages/
+*.nuspec
+project.lock.json
+project.assets.json
+*.deps.json
+*.runtimeconfig.dev.json
+
+## Ignore other IDE files
+*.sdf
+*.dbmdl
+*.pdb
+*.ipch
+
+## Ignore ReSharper and Rider
+_ReSharper*/
+*.DotSettings.user
+.idea/
+
+## Ignore generated code
+Generated_Code/
+
+## Ignore publish output
+publish/
+
+## Optional: Ignore local secrets
+secrets.json
+
+## Optional: Ignore JetBrains Rider workspace
+*.sln.iml
