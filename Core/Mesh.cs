@@ -42,7 +42,7 @@ namespace EngineCore
         }
 
         // Constructor
-        public Mesh(ReadOnlyMemory<Vector3> vertices, ReadOnlyMemory<int> indices, Vector2[] uvs, bool cache = true, params int[] program)
+        public Mesh(ReadOnlyMemory<OpenTK.Mathematics.Vector3> vertices, ReadOnlyMemory<int> indices, OpenTK.Mathematics.Vector2[] uvs, bool cache = true, params int[] program)
         {
             if (cache)
             {
@@ -59,12 +59,12 @@ namespace EngineCore
 
                 GL.BindVertexArray(Vao);
                 GL.BindBuffer(BufferTarget.ArrayBuffer, Vbo);
-                GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * Vector3.SizeInBytes, vertices.ToArray(), BufferUsageHint.StaticDraw);
+                GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * OpenTK.Mathematics.Vector3.SizeInBytes, vertices.ToArray(), BufferUsageHint.StaticDraw);
 
                 GL.BindBuffer(BufferTarget.ElementArrayBuffer, Ebo);
                 GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices.ToArray(), BufferUsageHint.StaticDraw);
 
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, Vector3.SizeInBytes, 0);
+                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, OpenTK.Mathematics.Vector3.SizeInBytes, 0);
                 GL.EnableVertexAttribArray(0);
 
                 GL.BindVertexArray(0);
@@ -74,7 +74,7 @@ namespace EngineCore
 
             IndexCount = indices.Length;
             RenderPasses = program;
-            Scale = Vector3.One;
+            Scale = new Vector3(1, 1, 1);
             Rotation = Quaternion.Identity;
 
             // Create and bind the VAO
@@ -114,28 +114,28 @@ namespace EngineCore
         public void RecalculateNormals()
         {
             // Step 1: Retrieve vertex positions from the GPU
-            Vector3[] vertices = new Vector3[IndexCount];
+            OpenTK.Mathematics.Vector3[] vertices = new OpenTK.Mathematics.Vector3[IndexCount];
             GL.BindBuffer(BufferTarget.ArrayBuffer, Vbo); // Bind the VBO containing vertex data
 
             // Assuming the positions are stored first in the VBO
-            GL.GetBufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, (IntPtr)(vertices.Length * Vector3.SizeInBytes), vertices);
+            GL.GetBufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, (IntPtr)(vertices.Length * OpenTK.Mathematics.Vector3.SizeInBytes), vertices);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0); // Unbind the VBO
 
             // Step 2: Recalculate normals
-            Vector3[] normals = new Vector3[vertices.Length];
+            OpenTK.Mathematics.Vector3[] normals = new OpenTK.Mathematics.Vector3[vertices.Length];
             for (int i = 0; i < IndexCount; i += 3)
             {
                 int idx0 = i;
                 int idx1 = i + 1;
                 int idx2 = i + 2;
 
-                Vector3 v0 = vertices[idx0];
-                Vector3 v1 = vertices[idx1];
-                Vector3 v2 = vertices[idx2];
+                OpenTK.Mathematics.Vector3 v0 = vertices[idx0];
+                OpenTK.Mathematics.Vector3 v1 = vertices[idx1];
+                OpenTK.Mathematics.Vector3 v2 = vertices[idx2];
 
-                Vector3 edge1 = v1 - v0;
-                Vector3 edge2 = v2 - v0;
-                Vector3 normal = Vector3.Cross(edge1, edge2).Normalized();
+                OpenTK.Mathematics.Vector3 edge1 = v1 - v0;
+                OpenTK.Mathematics.Vector3 edge2 = v2 - v0;
+                OpenTK.Mathematics.Vector3 normal = OpenTK.Mathematics.Vector3.Cross(edge1, edge2).Normalized();
 
                 normals[idx0] += normal;
                 normals[idx1] += normal;
@@ -152,8 +152,8 @@ namespace EngineCore
             GL.BindBuffer(BufferTarget.ArrayBuffer, Vbo); // Bind the VBO containing the vertex data
 
             // Offset the location for where the normals are stored in the VBO
-            IntPtr normalOffset = new IntPtr(Vector3.SizeInBytes * IndexCount);  // Assuming positions are stored before normals in the VBO
-            GL.BufferSubData(BufferTarget.ArrayBuffer, normalOffset, (IntPtr)(normals.Length * Vector3.SizeInBytes), normals);
+            IntPtr normalOffset = new IntPtr(OpenTK.Mathematics.Vector3.SizeInBytes * IndexCount);  // Assuming positions are stored before normals in the VBO
+            GL.BufferSubData(BufferTarget.ArrayBuffer, normalOffset, (IntPtr)(normals.Length * OpenTK.Mathematics.Vector3.SizeInBytes), normals);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0); // Unbind the VBO
         }
@@ -200,7 +200,7 @@ namespace EngineInternal
         private static Dictionary<MeshKey, MeshBufferData> meshCache = new Dictionary<MeshKey, MeshBufferData>();
         private static Dictionary<string, Mesh> LoadedMeshes = new Dictionary<string, Mesh>();
 
-        public static MeshBufferData GetMeshBufferData(ReadOnlyMemory<Vector3> vertices, ReadOnlyMemory<int> indices)
+        public static MeshBufferData GetMeshBufferData(ReadOnlyMemory<OpenTK.Mathematics.Vector3> vertices, ReadOnlyMemory<int> indices)
         {
             MeshKey key = GenerateMeshKey(vertices, indices);
 
@@ -216,7 +216,7 @@ namespace EngineInternal
             }
         }
 
-        private static MeshBufferData CreateMeshBuffers(ReadOnlyMemory<Vector3> vertices, ReadOnlyMemory<int> indices)
+        private static MeshBufferData CreateMeshBuffers(ReadOnlyMemory<OpenTK.Mathematics.Vector3> vertices, ReadOnlyMemory<int> indices)
         {
             int vao = GL.GenVertexArray();
             int vbo = GL.GenBuffer();
@@ -224,12 +224,12 @@ namespace EngineInternal
 
             GL.BindVertexArray(vao);
             GL.BindBuffer(BufferTarget.ArrayBuffer, vbo);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * Vector3.SizeInBytes, vertices.ToArray(), BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * OpenTK.Mathematics.Vector3.SizeInBytes, vertices.ToArray(), BufferUsageHint.StaticDraw);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, ebo);
             GL.BufferData(BufferTarget.ElementArrayBuffer, indices.Length * sizeof(int), indices.ToArray(), BufferUsageHint.StaticDraw);
 
-            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, Vector3.SizeInBytes, 0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, OpenTK.Mathematics.Vector3.SizeInBytes, 0);
             GL.EnableVertexAttribArray(0);
 
             GL.BindVertexArray(0);
@@ -237,20 +237,20 @@ namespace EngineInternal
             return new MeshBufferData(vao, vbo, ebo);
         }
 
-        private static MeshKey GenerateMeshKey(ReadOnlyMemory<Vector3> vertices, ReadOnlyMemory<int> indices)
+        private static MeshKey GenerateMeshKey(ReadOnlyMemory<OpenTK.Mathematics.Vector3> vertices, ReadOnlyMemory<int> indices)
         {
             return new MeshKey(vertices, indices);
         }
 
-        public static Mesh LoadMeshFromModel(string modelName, int shaderProgram, Vector3 position)
+        public static Mesh LoadMeshFromModel(string modelName, int shaderProgram)
         {
             if (!LoadedMeshes.ContainsKey(modelName))
             {
-                List<Vector3> Verts = new List<Vector3>();
-                List<Vector2> uvList = new List<Vector2>();
+                List<OpenTK.Mathematics.Vector3> Verts = new List<OpenTK.Mathematics.Vector3>();
+                List<OpenTK.Mathematics.Vector2> uvList = new List<OpenTK.Mathematics.Vector2>();
 
-                List<Vector3> finalVerts = new List<Vector3>();
-                List<Vector2> finalUVs = new List<Vector2>();
+                List<OpenTK.Mathematics.Vector3> finalVerts = new List<OpenTK.Mathematics.Vector3>();
+                List<OpenTK.Mathematics.Vector2> finalUVs = new List<OpenTK.Mathematics.Vector2>();
                 List<int> finalIndices = new List<int>();
 
                 Dictionary<string, int> uniqueVertexMap = new();
@@ -271,7 +271,7 @@ namespace EngineInternal
                                 float x = float.Parse(parts[0], CultureInfo.InvariantCulture);
                                 float y = float.Parse(parts[1], CultureInfo.InvariantCulture);
                                 float z = float.Parse(parts[2], CultureInfo.InvariantCulture);
-                                Verts.Add(new Vector3(x, y, z));
+                                Verts.Add(new OpenTK.Mathematics.Vector3(x, y, z));
                             }
                         }
                         else if (line.StartsWith("vt "))
@@ -326,7 +326,7 @@ namespace EngineInternal
                 }
 
                 Mesh mesh = new Mesh(
-                    new ReadOnlyMemory<Vector3>(finalVerts.ToArray()),
+                    new ReadOnlyMemory<OpenTK.Mathematics.Vector3>(finalVerts.ToArray()),
                     new ReadOnlyMemory<int>(finalIndices.ToArray()),
                     finalUVs.ToArray(),
                     true,
@@ -364,7 +364,7 @@ namespace EngineInternal
         public readonly int VertexHash;
         public readonly int IndexHash;
 
-        public MeshKey(ReadOnlyMemory<Vector3> vertices, ReadOnlyMemory<int> indices)
+        public MeshKey(ReadOnlyMemory<OpenTK.Mathematics.Vector3> vertices, ReadOnlyMemory<int> indices)
         {
             if (vertices.Length == 0) return;
             VertexHash = HashCode.Combine(vertices.Length, vertices.Span[0].GetHashCode());

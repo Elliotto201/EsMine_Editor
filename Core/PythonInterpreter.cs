@@ -11,18 +11,20 @@ namespace EngineInternal
 {
     public static class PythonInterpreter
     {
+        private static Dictionary<string, dynamic> Scripts = new Dictionary<string, dynamic>();
+
         static ScriptEngine _engine;
         static ScriptScope _scope;
 
-        static PythonInterpreter()
+        public static void LoadScript(string sourceCode, string className)
         {
             _engine = Python.CreateEngine();
             _scope = _engine.CreateScope();
-        }
 
-        public static void Execute(string code)
-        {
-            _engine.Execute(code);
+            _engine.Execute(sourceCode, _scope);
+
+            dynamic scriptClass = _scope.GetVariable(className);
+            Scripts.TryAdd(className, scriptClass);
         }
 
         public static void SetVariable(string name, object value)
@@ -33,6 +35,14 @@ namespace EngineInternal
         public static dynamic ReadVariable(string name)
         {
             return _scope.GetVariable(name);
+        }
+        
+        public static void CallUpdate(float dt)
+        {
+            foreach(var script in Scripts.Values)
+            {
+                script.update(dt);
+            }
         }
     }
 }

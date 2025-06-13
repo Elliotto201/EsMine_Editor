@@ -3,6 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System;
 
+namespace EngineCore;
 public static class Camera
 {
     public static Vector3 PositionOffset { get; set; }

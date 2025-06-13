@@ -10,6 +10,20 @@ using System.Numerics;
 
 namespace EngineExclude
 {
+    public enum HorizontalAnchor
+    {
+        Left,
+        Right,
+        Center
+    }
+
+    public enum VerticalAnchor
+    {
+        Top,
+        Bottom,
+        Center
+    }
+
     public class ImGuiViewportUI
     {
         static float FolderBarSize
@@ -23,13 +37,23 @@ namespace EngineExclude
         {
             get
             {
-                return ScaleByWindowSize(120);
+                return Math.Clamp(ScaleByWindowSize(120), 0, 120);
+            }
+        }
+        static float InspectorBarSize
+        {
+            get
+            {
+                return ScaleByWindowSize(210);
             }
         }
 
         public static event Action UIEvent;
         private List<IEditorUI> ControllerUi = new();
         private List<IEditorUI> FolderUi = new();
+        private List<Entity> SceneEntities = new();
+
+        private Entity SelectedEntity;
 
         private static float ScaleByWindowSize(float input)
         {
@@ -53,6 +77,14 @@ namespace EngineExclude
         {
             ChangeUI();
             Window.BuildWindow.Resize += ChangeUI;
+
+            AssetDataBase.AssetRefresh += AssetRefresh;
+            AssetRefresh();
+        }
+
+        private void AssetRefresh()
+        {
+            SceneEntities = AssetDataBase.LoadAllSceneEntities();
         }
 
         private void ChangeUI(ResizeEventArgs args = default)
@@ -60,9 +92,9 @@ namespace EngineExclude
             ControllerUi = new();
             FolderUi = new();
 
-            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + Window.BuildWindow.ClientSize.X / 2, 30), "Play");
-            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + Window.BuildWindow.ClientSize.X / 2, 30), "Pause");
-            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + Window.BuildWindow.ClientSize.X / 2, 30), "Exit");
+            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + ((Window.BuildWindow.ClientSize.X / 2) - InspectorBarSize), 30), "Play", VerticalAnchor.Top, HorizontalAnchor.Left);
+            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + ((Window.BuildWindow.ClientSize.X / 2) - InspectorBarSize), 30), "Pause", VerticalAnchor.Top, HorizontalAnchor.Center);
+            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + ((Window.BuildWindow.ClientSize.X / 2) - InspectorBarSize), 30), "Exit", VerticalAnchor.Top, HorizontalAnchor.Right);
 
             bPlay.OnClick += PlayEditor;
             ePlay.OnClick += ExitEditor;
@@ -86,8 +118,8 @@ namespace EngineExclude
                 center.Y -= 100;
                 var topLeft = center - (viewportSize / 2f);
 
-                ImGui.SetNextWindowSize(new Vector2(Window.BuildWindow.ClientSize.X, ControllerBarSize), ImGuiCond.Always);
-                ImGui.SetNextWindowPos(new Vector2(0, 0), ImGuiCond.Always);
+                ImGui.SetNextWindowSize(new Vector2(Window.BuildWindow.ClientSize.X - InspectorBarSize * 2, ControllerBarSize), ImGuiCond.Always);
+                ImGui.SetNextWindowPos(new Vector2(InspectorBarSize, 0), ImGuiCond.Always);
 
                 ImGui.Begin("Controller",
                     ImGuiWindowFlags.NoMove |
@@ -120,6 +152,106 @@ namespace EngineExclude
                 foreach (var ui in FolderUi)
                 {
                     ui.Render();
+                }
+
+                ImGui.End();
+
+                ImGui.SetNextWindowPos(new Vector2(windowWidth - InspectorBarSize, 0), ImGuiCond.Always);
+                ImGui.SetNextWindowSize(new Vector2(InspectorBarSize, windowHeight - FolderBarSize), ImGuiCond.Always);
+
+                ImGui.Begin("Inspector",
+                    ImGuiWindowFlags.NoMove |
+                    ImGuiWindowFlags.NoResize |
+                    ImGuiWindowFlags.NoCollapse |
+                    ImGuiWindowFlags.NoNavFocus |
+                    ImGuiWindowFlags.NoFocusOnAppearing |
+                    ImGuiWindowFlags.NoBringToFrontOnFocus);
+
+                ImGui.End();
+
+                ImGui.SetNextWindowPos(new Vector2(0, 0), ImGuiCond.Always);
+                ImGui.SetNextWindowSize(new Vector2(InspectorBarSize, windowHeight - FolderBarSize), ImGuiCond.Always);
+
+                ImGui.Begin("Hierarchy",
+                    ImGuiWindowFlags.NoMove |
+                    ImGuiWindowFlags.NoResize |
+                    ImGuiWindowFlags.NoCollapse |
+                    ImGuiWindowFlags.NoNavFocus |
+                    ImGuiWindowFlags.NoFocusOnAppearing |
+                    ImGuiWindowFlags.NoBringToFrontOnFocus);
+
+                bool entityContext = false;
+
+                ImGui.BeginChild("HierarchyScroll", new Vector2(0, 0), ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysVerticalScrollbar);
+                foreach (var entity in SceneEntities.ToArray())
+                {
+                    ImGui.PushID(entity.GUID.ToString());
+                    bool isSelected = SelectedEntity?.GUID == entity.GUID;
+
+                    if (ImGui.Selectable($"{entity.Name}", isSelected, ImGuiSelectableFlags.None))
+                    {
+                        SelectedEntity = entity;
+                    }
+                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
+                    {
+                        SelectedEntity = entity;
+                    }
+
+                    if (Window.BuildWindow.IsMouseButtonPressed(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsItemHovered())
+                    {
+                        entityContext = true;
+
+                        ImGui.OpenPopup("Entity Menu");
+                    }
+
+                    if (ImGui.BeginPopup("Entity Menu"))
+                    {
+                        if (ImGui.MenuItem("Delete"))
+                        {
+                            AssetDataBase.DeleteEntityHiearch(entity.GUID);
+                            SceneEntities.Remove(entity);
+                        }
+                        if (ImGui.MenuItem("Cancel"))
+                        {
+
+                        }
+                        ImGui.EndPopup();
+                    }
+
+                    ImGui.PopID();
+                }
+
+                if (Window.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered() && !entityContext)
+                {
+                    ImGui.OpenPopup("Scene Menu");
+                }
+
+                if (ImGui.BeginPopup("Scene Menu"))
+                {
+                    if (ImGui.MenuItem("Create Entity"))
+                    {
+                        AssetDataBase.CreateEntityHiearchy();
+                    }
+                    if (ImGui.MenuItem("Cancel"))
+                    {
+
+                    }
+                    ImGui.EndPopup();
+                }
+
+                ImGui.EndChild();
+
+                if (ImGui.BeginPopupContextWindow("SceneMenu"))
+                {
+                    if (ImGui.MenuItem("Create Entity"))
+                    {
+                        AssetDataBase.CreateEntityHiearchy();
+                    }
+                    if (ImGui.MenuItem("Cancel"))
+                    {
+                        // No action needed
+                    }
+                    ImGui.EndPopup();
                 }
 
                 ImGui.End();
@@ -193,6 +325,16 @@ namespace EngineExclude
 
             Console.Write("Exit");
         }
+
+        private bool MouseIsInsideView()
+        {
+            var mousePos = Window.BuildWindow.MousePosition;
+
+            return mousePos.X < Window.BuildWindow.ClientSize.X - InspectorBarSize && 
+                mousePos.Y > ControllerBarSize && 
+                mousePos.Y < Window.BuildWindow.ClientSize.Y - FolderBarSize && 
+                mousePos.X > InspectorBarSize;
+        }
     }
 
     public interface IEditorUI { public void Render(); }
@@ -203,22 +345,31 @@ namespace EngineExclude
         private bool UseTexture = false;
         private nint Texture;
 
+        private HorizontalAnchor HAnchor;
+        private VerticalAnchor VAnchor;
+
         public Vector2 Size { get; private set; }
         public Vector2 Position { get; private set; }
         public string Label { get; private set; }
         public event Action OnClick;
 
-        public EButton(int sizeX, int sizeY, int posX, int posY, string label)
+        public EButton(int sizeX, int sizeY, int posX, int posY, string label, VerticalAnchor vanchor, HorizontalAnchor hanchor)
         {
             Size = new Vector2 (sizeX, sizeY);
             Position = new Vector2 (posX, posY);
             Label = label;
+
+            VAnchor = vanchor;
+            HAnchor = hanchor;
         }
-        public EButton(Vector2 size, Vector2 pos, string label)
+        public EButton(Vector2 size, Vector2 pos, string label, VerticalAnchor vanchor, HorizontalAnchor hanchor)
         {
             Size = size;
             Position = pos;
             Label = label;
+
+            VAnchor = vanchor;
+            HAnchor = hanchor;
         }
 
         public void Render()
