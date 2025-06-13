@@ -19,9 +19,9 @@ namespace EngineExclude
         {
             ControllerUi = new();
 
-            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Play", VerticalAnchor.Top, HorizontalAnchor.Left);
-            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Pause", VerticalAnchor.Top, HorizontalAnchor.Center);
-            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Exit", VerticalAnchor.Top, HorizontalAnchor.Right);
+            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Play", true, false);
+            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Pause", true, false);
+            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Exit", true, false);
 
             bPlay.OnClick += PlayEditor;
             ePlay.OnClick += ExitEditor;
@@ -45,7 +45,8 @@ namespace EngineExclude
                 ImGuiWindowFlags.NoCollapse |
                 ImGuiWindowFlags.NoNavFocus |
                 ImGuiWindowFlags.NoFocusOnAppearing |
-                ImGuiWindowFlags.NoBringToFrontOnFocus);
+                ImGuiWindowFlags.NoBringToFrontOnFocus | 
+                ImGuiWindowFlags.NoScrollbar);
 
             foreach (var ui in ControllerUi)
             {

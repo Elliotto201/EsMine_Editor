@@ -2,16 +2,24 @@
 using EngineInternal;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace EngineCore
 {
-    public sealed class Entity : IInspectorGUI, IEquatable<Entity>
+    public sealed class Entity : IEquatable<Entity>
     {
         private static readonly HashSet<Guid> UsedGUIDs = new();
+        internal static readonly Dictionary<Guid, List<Behaviour>> EntityBehaviours = new();
+
         public Tags[] Tags = new Tags[4];
 
         public string Name { get; set; }
         public Guid GUID { get; }
+
+        //Transformation Data
+        public Vector3 Position { get; set; }
+        public Quaternion Rotation { get; set; }
+        public Vector3 Scale { get; set; }
 
         public Entity(string name)
         {
@@ -34,52 +42,6 @@ namespace EngineCore
             Tags = tags;
             UsedGUIDs.Add(guid);
         }
-
-        public T GetBehaviour<T>() where T : Behaviour
-        {
-            return EntityManager.GetBehaviour<T>(GUID);
-        }
-
-        public bool HasBehaviour<T>() where T : Behaviour
-        {
-            return EntityManager.HasBehaviour<T>(GUID);
-        }
-
-        public void DrawInspector()
-        {
-            
-        }
-
-        public bool Equals(Entity other)
-        {
-            return other.GUID.Equals(GUID);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if(typeof(Entity) == (Type)obj)
-            {
-                if (((Entity)obj).GUID.Equals(GUID)) return true;
-                return false;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public override int GetHashCode()
-        {
-            return GUID.GetHashCode();
-        }
-    }
-}
-
-namespace EngineInternal
-{
-    internal static class EntityManager
-    {
-        private static readonly Dictionary<Guid, List<Behaviour>> EntityBehaviours = new();
 
         public static T GetBehaviour<T>(Guid guid) where T : Behaviour
         {
@@ -107,6 +69,34 @@ namespace EngineInternal
             }
 
             return false;
+        }
+
+        public static void AddComponent<T>() where T : Behaviour
+        {
+            
+        }
+
+        public bool Equals(Entity other)
+        {
+            return other.GUID.Equals(GUID);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if(typeof(Entity) == (Type)obj)
+            {
+                if (((Entity)obj).GUID.Equals(GUID)) return true;
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return GUID.GetHashCode();
         }
     }
 }

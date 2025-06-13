@@ -56,11 +56,11 @@ namespace EngineExclude
         public List<Entity> SceneEntities = new();
 
         public Entity SelectedEntity;
-        private IInspectorGUI CurrentSelectedGUI;
+        public IInspectorGUI CurrentSelectedGUI;
 
         private List<IEditorWindow> EditorWindows = new();
 
-        private static float ScaleByWindowSize(float input)
+        public static float ScaleByWindowSize(float input)
         {
             const float baseWidth = 1280f;
             const float baseHeight = 760f;
@@ -87,10 +87,13 @@ namespace EngineExclude
             AssetDataBase.AssetRefresh += AssetRefresh;
             AssetRefresh();
 
+            if(Window.BuildWindow.GameType == GameWindowType.Editor)
+            {
+                EditorWindows.Add(new EditorFolder());
+                EditorWindows.Add(new EditorInspector());
+                EditorWindows.Add(new EditorHierarchy());
+            }
             EditorWindows.Add(new EditorController());
-            EditorWindows.Add(new EditorFolder());
-            EditorWindows.Add(new EditorInspector());
-            EditorWindows.Add(new EditorHierarchy());
         }
 
         private void BuildWindow_Resize(ResizeEventArgs obj)
@@ -135,39 +138,52 @@ namespace EngineExclude
         private bool UseTexture = false;
         private nint Texture;
 
-        private HorizontalAnchor HAnchor;
-        private VerticalAnchor VAnchor;
+        private bool ScaleSize;
+        private bool ScalePos;
 
         public Vector2 Size { get; private set; }
         public Vector2 Position { get; private set; }
         public string Label { get; private set; }
         public event Action OnClick;
 
-        public EButton(int sizeX, int sizeY, int posX, int posY, string label, VerticalAnchor vanchor, HorizontalAnchor hanchor)
+        public EButton(int sizeX, int sizeY, int posX, int posY, string label, bool scalePos, bool scaleSize)
         {
             Size = new Vector2 (sizeX, sizeY);
             Position = new Vector2 (posX, posY);
             Label = label;
 
-            VAnchor = vanchor;
-            HAnchor = hanchor;
+            ScaleSize = scaleSize;
+            ScalePos = scalePos;
         }
-        public EButton(Vector2 size, Vector2 pos, string label, VerticalAnchor vanchor, HorizontalAnchor hanchor)
+        public EButton(Vector2 size, Vector2 pos, string label, bool scalePos, bool scaleSize)
         {
             Size = size;
             Position = pos;
             Label = label;
 
-            VAnchor = vanchor;
-            HAnchor = hanchor;
+            ScaleSize = scaleSize;
+            ScalePos = scalePos;
         }
 
         public void Render()
         {
-            ImGui.SetCursorPos(Position);
+            if (ScalePos)
+            {
+                ImGui.SetCursorPos(ScaleByWindowSize(Position));
+            }
+            else
+            {
+                ImGui.SetCursorPos(Position);
+            }
+            Vector2 size = Size;
+            if (ScaleSize)
+            {
+                size = ScaleByWindowSize(Size);
+            }
+
             if(!UseTexture)
             {
-                bool buttonPress = ImGui.Button(Label, Size);
+                bool buttonPress = ImGui.Button(Label, size);
 
                 if (buttonPress && !pressedLastFrame)
                 {
@@ -181,7 +197,7 @@ namespace EngineExclude
             }
             else
             {
-                bool buttonPress = ImGui.ImageButton(Label, Texture, Size);
+                bool buttonPress = ImGui.ImageButton(Label, Texture, size);
 
                 if (buttonPress && pressedLastFrame)
                 {
@@ -201,6 +217,42 @@ namespace EngineExclude
             {
                 Texture = texture;
             }
+        }
+
+        private static float ScaleByWindowSize(float input)
+        {
+            const float baseWidth = 1280f;
+            const float baseHeight = 760f;
+
+            var size = Window.BuildWindow.ClientSize;
+            float currentWidth = size.X;
+            float currentHeight = size.Y;
+
+            float widthScale = currentWidth / baseWidth;
+            float heightScale = currentHeight / baseHeight;
+
+            // Use average scaling for general purpose
+            float scale = (widthScale + heightScale) / 2f;
+
+            return input * scale;
+        }
+
+        private static Vector2 ScaleByWindowSize(Vector2 input)
+        {
+            const float baseWidth = 1280f;
+            const float baseHeight = 760f;
+
+            var size = Window.BuildWindow.ClientSize;
+            float currentWidth = size.X;
+            float currentHeight = size.Y;
+
+            float widthScale = currentWidth / baseWidth;
+            float heightScale = currentHeight / baseHeight;
+
+            // Use average scaling for general purpose
+            float scale = (widthScale + heightScale) / 2f;
+
+            return input * scale;
         }
     }
     public class EColorBox : IEditorUI
@@ -229,6 +281,11 @@ namespace EngineInternal
 {
     public interface IInspectorGUI
     {
-        public void DrawInspector();
+        public InspectorDrawType DrawInspector();
+    }
+
+    public enum InspectorDrawType
+    {
+
     }
 }

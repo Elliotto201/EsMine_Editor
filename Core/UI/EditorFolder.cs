@@ -11,12 +11,17 @@ namespace EngineExclude
 {
     public class EditorFolder : IEditorWindow
     {
-        private List<IEditorUI> FolderUi = new();
-
         public EditorFolder()
         {
             WhenToRender = GameWindowType.Editor;
             OtherWhenToRender = GameWindowType.Editor;
+
+            Window.BuildWindow.FileDrop += BuildWindow_FileDrop;
+        }
+
+        private void BuildWindow_FileDrop(OpenTK.Windowing.Common.FileDropEventArgs obj)
+        {
+            
         }
 
         public override void Render()
@@ -34,9 +39,22 @@ namespace EngineExclude
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoBringToFrontOnFocus);
 
-            foreach (var ui in FolderUi)
+            if (Window.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered())
             {
-                ui.Render();
+                ImGui.OpenPopup("File Menu");
+            }
+
+            if (ImGui.BeginPopup("File Menu"))
+            {
+                if (ImGui.MenuItem("Create PrefabEntity"))
+                {
+                    
+                }
+                if (ImGui.MenuItem("Cancel"))
+                {
+
+                }
+                ImGui.EndPopup();
             }
 
             ImGui.End();

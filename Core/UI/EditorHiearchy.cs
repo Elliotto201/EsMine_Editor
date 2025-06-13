@@ -64,6 +64,8 @@ namespace EngineExclude
                     {
                         AssetDataBase.DeleteEntityHiearch(entity.GUID);
                         ImGuiViewportUI.Current.SceneEntities.Remove(entity);
+
+                        ImGuiViewportUI.Current.SelectedEntity = null;
                     }
                     if (ImGui.MenuItem("Cancel"))
                     {

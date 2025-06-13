@@ -10,4 +10,11 @@ namespace EngineCore
     {
 
     }
+
+
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    public sealed class Export : Attribute
+    {
+
+    }
 }

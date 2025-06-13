@@ -13,12 +13,16 @@ using System.Threading.Tasks;
 using EngineCore;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using EngineExclude;
 
 namespace EngineInternal
 {
     public static class AssetDataBase
     {
         const string HIEARCHY_ENTITY = ".sEntity";
+        const string ENTITY_METAFILE = ".eMeta";
 
         private static string AssetDirectory;
         public static Action AssetRefresh;
@@ -42,6 +46,13 @@ namespace EngineInternal
                     var bytes = AssetSerializer.SerializeAsset(entity);
                     fs.Write(bytes);
                 }
+                using (var metafs = File.Create(AssetDirectory + entity.GUID.ToString() + ENTITY_METAFILE))
+                {
+                    var mFile = new EntityMetaFile();
+
+                    var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(mFile));
+                    metafs.Write(bytes);
+                }
 
                 AssetRefresh?.Invoke();
             }
@@ -53,6 +64,7 @@ namespace EngineInternal
             if(Window.BuildWindow.GameType == GameWindowType.Editor)
             {
                 File.Delete(AssetDirectory + entityGuid.ToString() + HIEARCHY_ENTITY);
+                File.Delete(AssetDirectory + entityGuid.ToString() + ENTITY_METAFILE);
 
                 AssetRefresh?.Invoke();
             }
@@ -76,6 +88,37 @@ namespace EngineInternal
             }
 
             return entities;
+        }
+
+        public static List<ScriptLoad> LoadAllScripts()
+        {
+            var scriptPaths = Directory.GetFiles(AssetDirectory).Where(t => t.EndsWith(".cs"));
+            List<ScriptLoad> scripts = new List<ScriptLoad>(scriptPaths.Count());
+
+            foreach(var scriptPath in scriptPaths)
+            {
+                var script = new ScriptLoad(scriptPath.Remove(0, AssetDirectory.Length), scriptPath);
+                Console.WriteLine(scriptPath.Remove(0, AssetDirectory.Length));
+
+                scripts.Add(script);
+            }
+
+            return scripts;
+        }
+
+        public static string GetCurrentSelectedEntityMetaPath()
+        {
+            var files = Directory.GetFiles(AssetDirectory).Where(t => t.EndsWith(ENTITY_METAFILE));
+
+            foreach(var file in files)
+            {
+                if (file.Contains(ImGuiViewportUI.Current.SelectedEntity.GUID.ToString()))
+                {
+                    return file;
+                }
+            }
+
+            throw new Exception("Entity was not found");
         }
     }
 
@@ -183,35 +226,36 @@ namespace EngineInternal
             return result;
         }
     }
-}
 
-
-//A struct representing a serialized unmanaged entity
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public unsafe struct SerializedEntity
-{
-    public fixed byte NameBytes[12];
-    public int NameLength;
-    public Guid GUID;
-
-    public Tags Tag0, Tag1, Tag2, Tag3;
-
-    public SerializedEntity(Entity entity)
+    //A struct representing a serialized unmanaged entity
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public unsafe struct SerializedEntity
     {
-        Tag0 = entity.Tags[0];
-        Tag1 = entity.Tags[1];
-        Tag2 = entity.Tags[2];
-        Tag3 = entity.Tags[3];
+        public fixed byte NameBytes[12];
+        public int NameLength;
+        public Guid GUID;
 
-        GUID = entity.GUID;
-        string name = entity.Name ?? "";
-        byte[] tempBytes = Encoding.UTF8.GetBytes(name);
-        NameLength = Math.Min(tempBytes.Length, 12);
+        public Tags Tag0, Tag1, Tag2, Tag3;
 
-        fixed (byte* namePtr = NameBytes)
+        public SerializedEntity(Entity entity)
         {
-            for (int i = 0; i < NameLength; i++)
-                namePtr[i] = tempBytes[i];
+            Tag0 = entity.Tags[0];
+            Tag1 = entity.Tags[1];
+            Tag2 = entity.Tags[2];
+            Tag3 = entity.Tags[3];
+
+            GUID = entity.GUID;
+            string name = entity.Name ?? "";
+            byte[] tempBytes = Encoding.UTF8.GetBytes(name);
+            NameLength = Math.Min(tempBytes.Length, 12);
+
+            fixed (byte* namePtr = NameBytes)
+            {
+                for (int i = 0; i < NameLength; i++)
+                    namePtr[i] = tempBytes[i];
+            }
         }
     }
+
+    public record struct ScriptLoad(string name, string path);
 }
