@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace EngineCore
 {
-    public sealed class Entity
+    public sealed class Entity : IInspectorGUI, IEquatable<Entity>
     {
         private static readonly HashSet<Guid> UsedGUIDs = new();
         public Tags[] Tags = new Tags[4];
@@ -20,6 +20,7 @@ namespace EngineCore
 
             while (UsedGUIDs.Contains(guid))
                 guid = Guid.NewGuid();
+
 
             GUID = guid;
             UsedGUIDs.Add(guid);
@@ -42,6 +43,34 @@ namespace EngineCore
         public bool HasBehaviour<T>() where T : Behaviour
         {
             return EntityManager.HasBehaviour<T>(GUID);
+        }
+
+        public void DrawInspector()
+        {
+            
+        }
+
+        public bool Equals(Entity other)
+        {
+            return other.GUID.Equals(GUID);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if(typeof(Entity) == (Type)obj)
+            {
+                if (((Entity)obj).GUID.Equals(GUID)) return true;
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return GUID.GetHashCode();
         }
     }
 }

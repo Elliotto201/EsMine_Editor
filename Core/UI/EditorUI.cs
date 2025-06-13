@@ -26,21 +26,23 @@ namespace EngineExclude
 
     public class ImGuiViewportUI
     {
-        static float FolderBarSize
+        public static ImGuiViewportUI Current { get; private set; }
+
+        public static float FolderBarSize
         {
             get
             {
                 return ScaleByWindowSize(220) + 2;
             }
         }
-        static float ControllerBarSize
+        public static float ControllerBarSize
         {
             get
             {
                 return Math.Clamp(ScaleByWindowSize(120), 0, 120);
             }
         }
-        static float InspectorBarSize
+        public static float InspectorBarSize
         {
             get
             {
@@ -48,12 +50,15 @@ namespace EngineExclude
             }
         }
 
-        public static event Action UIEvent;
-        private List<IEditorUI> ControllerUi = new();
-        private List<IEditorUI> FolderUi = new();
-        private List<Entity> SceneEntities = new();
+        public static Action Resize;
 
-        private Entity SelectedEntity;
+        public static event Action UIEvent;
+        public List<Entity> SceneEntities = new();
+
+        public Entity SelectedEntity;
+        private IInspectorGUI CurrentSelectedGUI;
+
+        private List<IEditorWindow> EditorWindows = new();
 
         private static float ScaleByWindowSize(float input)
         {
@@ -75,11 +80,22 @@ namespace EngineExclude
 
         public ImGuiViewportUI()
         {
-            ChangeUI();
-            Window.BuildWindow.Resize += ChangeUI;
+            Current = this;
+
+            Window.BuildWindow.Resize += BuildWindow_Resize; ;
 
             AssetDataBase.AssetRefresh += AssetRefresh;
             AssetRefresh();
+
+            EditorWindows.Add(new EditorController());
+            EditorWindows.Add(new EditorFolder());
+            EditorWindows.Add(new EditorInspector());
+            EditorWindows.Add(new EditorHierarchy());
+        }
+
+        private void BuildWindow_Resize(ResizeEventArgs obj)
+        {
+            UIEvent?.Invoke();
         }
 
         private void AssetRefresh()
@@ -87,257 +103,31 @@ namespace EngineExclude
             SceneEntities = AssetDataBase.LoadAllSceneEntities();
         }
 
-        private void ChangeUI(ResizeEventArgs args = default)
-        {
-            ControllerUi = new();
-            FolderUi = new();
-
-            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + ((Window.BuildWindow.ClientSize.X / 2) - InspectorBarSize), 30), "Play", VerticalAnchor.Top, HorizontalAnchor.Left);
-            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + ((Window.BuildWindow.ClientSize.X / 2) - InspectorBarSize), 30), "Pause", VerticalAnchor.Top, HorizontalAnchor.Center);
-            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + ((Window.BuildWindow.ClientSize.X / 2) - InspectorBarSize), 30), "Exit", VerticalAnchor.Top, HorizontalAnchor.Right);
-
-            bPlay.OnClick += PlayEditor;
-            ePlay.OnClick += ExitEditor;
-
-            ControllerUi.Add(bPlay);
-            ControllerUi.Add(pPlay);
-            ControllerUi.Add(ePlay);
-
-            //FolderUi.Add()
-        }
-
         public void RenderUI()
         {
-            if(Window.BuildWindow.GameType == GameWindowType.Editor)
+            foreach (var window in EditorWindows)
             {
-                var clientSize = Window.BuildWindow.ClientSize;
-                var viewportSize = clientSize.ToVector2() / 1.5f;
-                var center = clientSize.ToVector2() / 2f;
-
-                // Move center up by 50 pixels
-                center.Y -= 100;
-                var topLeft = center - (viewportSize / 2f);
-
-                ImGui.SetNextWindowSize(new Vector2(Window.BuildWindow.ClientSize.X - InspectorBarSize * 2, ControllerBarSize), ImGuiCond.Always);
-                ImGui.SetNextWindowPos(new Vector2(InspectorBarSize, 0), ImGuiCond.Always);
-
-                ImGui.Begin("Controller",
-                    ImGuiWindowFlags.NoMove |
-                    ImGuiWindowFlags.NoResize |
-                    ImGuiWindowFlags.NoCollapse |
-                    ImGuiWindowFlags.NoNavFocus |
-                    ImGuiWindowFlags.NoFocusOnAppearing |
-                    ImGuiWindowFlags.NoBringToFrontOnFocus);
-
-                foreach (var ui in ControllerUi)
+                if (window.WhenToRender == Window.BuildWindow.GameType || window.OtherWhenToRender == Window.BuildWindow.GameType)
                 {
-                    ui.Render();
+                    window.Render();
                 }
-
-                ImGui.End();
-
-                float windowWidth = Window.BuildWindow.ClientSize.X;
-                float windowHeight = Window.BuildWindow.ClientSize.Y;
-                ImGui.SetNextWindowSize(new Vector2(windowWidth, FolderBarSize), ImGuiCond.Always);
-                ImGui.SetNextWindowPos(new Vector2(0, windowHeight - FolderBarSize), ImGuiCond.Always);
-                
-
-                ImGui.Begin("File Explorer",
-                    ImGuiWindowFlags.NoMove |
-                    ImGuiWindowFlags.NoResize |
-                    ImGuiWindowFlags.NoNavFocus |
-                    ImGuiWindowFlags.NoFocusOnAppearing |
-                    ImGuiWindowFlags.NoBringToFrontOnFocus);
-
-                foreach (var ui in FolderUi)
-                {
-                    ui.Render();
-                }
-
-                ImGui.End();
-
-                ImGui.SetNextWindowPos(new Vector2(windowWidth - InspectorBarSize, 0), ImGuiCond.Always);
-                ImGui.SetNextWindowSize(new Vector2(InspectorBarSize, windowHeight - FolderBarSize), ImGuiCond.Always);
-
-                ImGui.Begin("Inspector",
-                    ImGuiWindowFlags.NoMove |
-                    ImGuiWindowFlags.NoResize |
-                    ImGuiWindowFlags.NoCollapse |
-                    ImGuiWindowFlags.NoNavFocus |
-                    ImGuiWindowFlags.NoFocusOnAppearing |
-                    ImGuiWindowFlags.NoBringToFrontOnFocus);
-
-                ImGui.End();
-
-                ImGui.SetNextWindowPos(new Vector2(0, 0), ImGuiCond.Always);
-                ImGui.SetNextWindowSize(new Vector2(InspectorBarSize, windowHeight - FolderBarSize), ImGuiCond.Always);
-
-                ImGui.Begin("Hierarchy",
-                    ImGuiWindowFlags.NoMove |
-                    ImGuiWindowFlags.NoResize |
-                    ImGuiWindowFlags.NoCollapse |
-                    ImGuiWindowFlags.NoNavFocus |
-                    ImGuiWindowFlags.NoFocusOnAppearing |
-                    ImGuiWindowFlags.NoBringToFrontOnFocus);
-
-                bool entityContext = false;
-
-                ImGui.BeginChild("HierarchyScroll", new Vector2(0, 0), ImGuiChildFlags.None, ImGuiWindowFlags.AlwaysVerticalScrollbar);
-                foreach (var entity in SceneEntities.ToArray())
-                {
-                    ImGui.PushID(entity.GUID.ToString());
-                    bool isSelected = SelectedEntity?.GUID == entity.GUID;
-
-                    if (ImGui.Selectable($"{entity.Name}", isSelected, ImGuiSelectableFlags.None))
-                    {
-                        SelectedEntity = entity;
-                    }
-                    if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
-                    {
-                        SelectedEntity = entity;
-                    }
-
-                    if (Window.BuildWindow.IsMouseButtonPressed(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsItemHovered())
-                    {
-                        entityContext = true;
-
-                        ImGui.OpenPopup("Entity Menu");
-                    }
-
-                    if (ImGui.BeginPopup("Entity Menu"))
-                    {
-                        if (ImGui.MenuItem("Delete"))
-                        {
-                            AssetDataBase.DeleteEntityHiearch(entity.GUID);
-                            SceneEntities.Remove(entity);
-                        }
-                        if (ImGui.MenuItem("Cancel"))
-                        {
-
-                        }
-                        ImGui.EndPopup();
-                    }
-
-                    ImGui.PopID();
-                }
-
-                if (Window.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered() && !entityContext)
-                {
-                    ImGui.OpenPopup("Scene Menu");
-                }
-
-                if (ImGui.BeginPopup("Scene Menu"))
-                {
-                    if (ImGui.MenuItem("Create Entity"))
-                    {
-                        AssetDataBase.CreateEntityHiearchy();
-                    }
-                    if (ImGui.MenuItem("Cancel"))
-                    {
-
-                    }
-                    ImGui.EndPopup();
-                }
-
-                ImGui.EndChild();
-
-                if (ImGui.BeginPopupContextWindow("SceneMenu"))
-                {
-                    if (ImGui.MenuItem("Create Entity"))
-                    {
-                        AssetDataBase.CreateEntityHiearchy();
-                    }
-                    if (ImGui.MenuItem("Cancel"))
-                    {
-                        // No action needed
-                    }
-                    ImGui.EndPopup();
-                }
-
-                ImGui.End();
             }
-            else if(Window.BuildWindow.GameType == GameWindowType.EditorBuild)
-            {
-                var clientSize = Window.BuildWindow.ClientSize;
-                var viewportSize = clientSize.ToVector2() / 1.5f;
-                var center = clientSize.ToVector2() / 2f;
-
-                // Move center up by 50 pixels
-                center.Y -= 100;
-                var topLeft = center - (viewportSize / 2f);
-
-                ImGui.SetNextWindowSize(new Vector2(Window.BuildWindow.ClientSize.X, ControllerBarSize), ImGuiCond.Always);
-                ImGui.SetNextWindowPos(new Vector2(0, 0), ImGuiCond.Always);
-
-                ImGui.Begin("Controller",
-                    ImGuiWindowFlags.NoMove |
-                    ImGuiWindowFlags.NoResize |
-                    ImGuiWindowFlags.NoCollapse |
-                    ImGuiWindowFlags.NoNavFocus |
-                    ImGuiWindowFlags.NoFocusOnAppearing |
-                    ImGuiWindowFlags.NoBringToFrontOnFocus);
-
-                foreach (var ui in ControllerUi)
-                {
-                    ui.Render();
-                }
-
-                ImGui.End();
-            }
-        }
-
-        private void PlayEditor()
-        {
-            if (Window.BuildWindow.GameType != GameWindowType.Editor) return;
-
-            Window.BuildWindow.Dispose();
-
-            var nativeWindowSettings = new NativeWindowSettings()
-            {
-                Size = new OpenTK.Mathematics.Vector2i(1280, 760),
-                Title = "My Compute Shader App",
-                API = ContextAPI.OpenGL,
-                Profile = ContextProfile.Core,
-                APIVersion = new Version(4, 3), // 👈 Must be 4.3 or higher
-                Flags = ContextFlags.Debug
-            };
-            new Window(1280, 760, nativeWindowSettings, GameWindowType.EditorBuild).Run();
-
-            Console.Write("Play");
-        }
-
-        private void ExitEditor()
-        {
-            if (Window.BuildWindow.GameType != GameWindowType.EditorBuild) return;
-
-            Window.BuildWindow.Dispose();
-
-            var nativeWindowSettings = new NativeWindowSettings()
-            {
-                Size = new OpenTK.Mathematics.Vector2i(1280, 760),
-                Title = "My Compute Shader App",
-                API = ContextAPI.OpenGL,
-                Profile = ContextProfile.Core,
-                APIVersion = new Version(4, 3), // 👈 Must be 4.3 or higher
-                Flags = ContextFlags.Debug
-            };
-            new Window(1280, 760, nativeWindowSettings, GameWindowType.Editor).Run();
-
-            Console.Write("Exit");
         }
 
         private bool MouseIsInsideView()
         {
-            var mousePos = Window.BuildWindow.MousePosition;
-
-            return mousePos.X < Window.BuildWindow.ClientSize.X - InspectorBarSize && 
-                mousePos.Y > ControllerBarSize && 
-                mousePos.Y < Window.BuildWindow.ClientSize.Y - FolderBarSize && 
-                mousePos.X > InspectorBarSize;
+            return !ImGui.IsAnyItemHovered();
         }
     }
 
     public interface IEditorUI { public void Render(); }
+    public abstract class IEditorWindow
+    {
+        internal GameWindowType WhenToRender;
+        internal GameWindowType OtherWhenToRender;
+
+        public abstract void Render();
+    }
 
     public class EButton : IEditorUI
     {
@@ -413,7 +203,6 @@ namespace EngineExclude
             }
         }
     }
-
     public class EColorBox : IEditorUI
     {
         public Vector2 Size { get; private set; }
@@ -433,5 +222,13 @@ namespace EngineExclude
 
             drawList.AddRectFilled(Position - Size, Position + Size, Color);
         }
+    }
+}
+
+namespace EngineInternal
+{
+    public interface IInspectorGUI
+    {
+        public void DrawInspector();
     }
 }
