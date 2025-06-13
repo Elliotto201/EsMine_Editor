@@ -45,10 +45,12 @@ namespace EngineExclude
                 if (ImGui.Selectable($"{entity.Name}", isSelected, ImGuiSelectableFlags.None))
                 {
                     ImGuiViewportUI.Current.SelectedEntity = entity;
+                    AssetDataBase.AssetRefresh?.Invoke();
                 }
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
                     ImGuiViewportUI.Current.SelectedEntity = entity;
+                    AssetDataBase.AssetRefresh?.Invoke();
                 }
 
                 if (Window.BuildWindow.IsMouseButtonPressed(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsItemHovered())

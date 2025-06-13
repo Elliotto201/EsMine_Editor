@@ -89,8 +89,8 @@ namespace EngineExclude
 
             if(Window.BuildWindow.GameType == GameWindowType.Editor)
             {
-                EditorWindows.Add(new EditorFolder());
                 EditorWindows.Add(new EditorInspector());
+                EditorWindows.Add(new EditorFolder());
                 EditorWindows.Add(new EditorHierarchy());
             }
             EditorWindows.Add(new EditorController());

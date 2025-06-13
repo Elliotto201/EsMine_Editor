@@ -16,23 +16,31 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using EngineExclude;
+using System.Reflection;
 
 namespace EngineInternal
 {
     public static class AssetDataBase
     {
-        const string HIEARCHY_ENTITY = ".sEntity";
-        const string ENTITY_METAFILE = ".eMeta";
+        public const string HIEARCHY_ENTITY = ".sEntity";
+        public const string ENTITY_METAFILE = ".eMeta";
 
-        private static string AssetDirectory;
+        public static string AssetDirectory;
         public static Action AssetRefresh;
 
         static AssetDataBase()
         {
-            AssetDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Assets");
+            string currentDir = Directory.GetCurrentDirectory();
+
+            // Go back two folders
+            string twoLevelsUp = Path.GetFullPath(Path.Combine(currentDir, "..", Path.Combine("..", "..")));
+
+            // Then combine with Assets
+            AssetDirectory = Path.Combine(twoLevelsUp, "Assets");
+
             Directory.CreateDirectory(AssetDirectory);
 
-            AssetDirectory += "/";
+            AssetDirectory += Path.DirectorySeparatorChar;
         }
 
         public static void CreateEntityHiearchy()
@@ -98,7 +106,6 @@ namespace EngineInternal
             foreach(var scriptPath in scriptPaths)
             {
                 var script = new ScriptLoad(scriptPath.Remove(0, AssetDirectory.Length), scriptPath);
-                Console.WriteLine(scriptPath.Remove(0, AssetDirectory.Length));
 
                 scripts.Add(script);
             }
@@ -193,21 +200,79 @@ namespace EngineInternal
 
         public static Entity DeSerializeAsset(byte[] bytes)
         {
-            var dsEntity = MemoryMarshal.Read<SerializedEntity>(new Span<byte>(bytes));
+            if (bytes.Length != Marshal.SizeOf<SerializedEntity>())
+            {
+                throw new Exception($"Invalid byte array size: {bytes.Length}, expected {Marshal.SizeOf<SerializedEntity>()}.");
+            }
 
+            var dsEntity = MemoryMarshal.Read<SerializedEntity>(new Span<byte>(bytes));
             Tags[] tagArray = [dsEntity.Tag0, dsEntity.Tag1, dsEntity.Tag2, dsEntity.Tag3];
 
             unsafe
             {
-                //unsafe to safe
                 var esBytes = new byte[12];
-
-                for(int i = 0; i < 12; i++)
+                for (int i = 0; i < 12; i++)
                 {
                     esBytes[i] = dsEntity.NameBytes[i];
                 }
 
-                return new Entity(Encoding.UTF8.GetString(esBytes, 0, dsEntity.NameLength), dsEntity.GUID, tagArray);
+                var entity = new Entity(Encoding.UTF8.GetString(esBytes, 0, dsEntity.NameLength), dsEntity.GUID, tagArray);
+                List<Behaviour> behaviours = new List<Behaviour>();
+
+                foreach (var script in EditorInspector.LoadedScripts)
+                {
+                    string className = script.name.Replace(".cs", "");
+                    Type foundType = null;
+
+                    var metaFilePath = AssetDataBase.AssetDirectory + dsEntity.GUID.ToString() + AssetDataBase.ENTITY_METAFILE;
+                    if (!File.Exists(metaFilePath))
+                    {
+                        Console.WriteLine($"Warning: Meta file not found at {metaFilePath}");
+                        continue;
+                    }
+
+                    var metaFileText = Encoding.UTF8.GetString(File.ReadAllBytes(metaFilePath));
+                    var metaFile = JsonConvert.DeserializeObject<EntityMetaFile>(metaFileText);
+
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        foundType = assembly.GetTypes().FirstOrDefault(t => t.Name == className);
+                        if (foundType != null)
+                            break;
+                    }
+
+                    if (foundType == null)
+                    {
+                        Console.WriteLine($"Warning: Type '{className}' not found in loaded assemblies.");
+                        continue;
+                    }
+
+                    if (metaFile.Scripts.Any(t => t.name.Contains(foundType.Name)))
+                    {
+                        if (!typeof(Behaviour).IsAssignableFrom(foundType))
+                        {
+                            Console.WriteLine($"Warning: Type '{foundType.Name}' is not a Behaviour.");
+                            continue;
+                        }
+                        behaviours.Add((Behaviour)Activator.CreateInstance(foundType));
+                    }
+                }
+
+                if (behaviours.Count > 0)
+                {
+                    if (entity == null)
+                        throw new Exception("Entity is null during deserialization.");
+
+                    var eType = entity.GetType();
+                    PropertyInfo info = eType.GetProperty("Behaviours", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    if (info == null)
+                    {
+                        throw new Exception($"Field 'Behaviours' not found in type '{eType.Name}'.");
+                    }
+                    info.SetValue(entity, behaviours);
+                }
+
+                return entity;
             }
         }
 

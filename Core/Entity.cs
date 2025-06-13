@@ -2,6 +2,7 @@
 using EngineInternal;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace EngineCore
@@ -9,9 +10,10 @@ namespace EngineCore
     public sealed class Entity : IEquatable<Entity>
     {
         private static readonly HashSet<Guid> UsedGUIDs = new();
-        internal static readonly Dictionary<Guid, List<Behaviour>> EntityBehaviours = new();
+        public List<Behaviour> Behaviours { get; private set; } = new();
 
-        public Tags[] Tags = new Tags[4];
+        //Tags are kind of like unity layers. They are a form of identification. You can have up to 4 tags. Theese are/will be configurable in the editor in the future
+        internal Tags[] Tags = new Tags[4];
 
         public string Name { get; set; }
         public Guid GUID { get; }
@@ -43,37 +45,29 @@ namespace EngineCore
             UsedGUIDs.Add(guid);
         }
 
-        public static T GetBehaviour<T>(Guid guid) where T : Behaviour
+        public T GetBehaviour<T>(T value) where T : Behaviour
         {
-            if (!EntityBehaviours.TryGetValue(guid, out var list))
-                throw new InvalidOperationException($"Entity with GUID {guid} has no components.");
+            var behaviour = Behaviours.Find(t => t.GetType() == typeof(T));
 
-            foreach (var behaviour in list)
+            if (behaviour != null)
             {
-                if (behaviour is T match)
-                    return match;
+                return (T)behaviour;
             }
 
-            throw new InvalidOperationException($"Entity does not contain a component of type: {typeof(T)}");
+            throw new Exception($"Entity with name {Name} doesn't have component of type {typeof(T)}");
         }
 
-        public static bool HasBehaviour<T>(Guid guid) where T : Behaviour
+        public bool HasBehaviour<T>(T value) where T : Behaviour
         {
-            if (!EntityBehaviours.TryGetValue(guid, out var list))
-                return false;
+            return Behaviours.Any(t => t.GetType() == value.GetType());
+        }
 
-            foreach (var behaviour in list)
+        public void AddComponent<T>(T value) where T : Behaviour
+        {
+            if(!Behaviours.Any(t => t.GetType() == typeof(T)))
             {
-                if (behaviour is T match)
-                    return true;
+                Behaviours.Add(value);
             }
-
-            return false;
-        }
-
-        public static void AddComponent<T>() where T : Behaviour
-        {
-            
         }
 
         public bool Equals(Entity other)
@@ -97,6 +91,13 @@ namespace EngineCore
         public override int GetHashCode()
         {
             return GUID.GetHashCode();
+        }
+
+
+        //Will remove in future. Only temporary
+        public void SetBehaviours(List<Behaviour> behaviours)
+        {
+            Behaviours = behaviours;
         }
     }
 }
