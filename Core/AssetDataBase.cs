@@ -26,21 +26,31 @@ namespace EngineInternal
         public const string ENTITY_METAFILE = ".eMeta";
 
         public static string AssetDirectory;
+        public static string HiddenAssetDirectory;
+
         public static Action AssetRefresh;
 
         static AssetDataBase()
         {
             string currentDir = Directory.GetCurrentDirectory();
 
-            // Go back two folders
-            string twoLevelsUp = Path.GetFullPath(Path.Combine(currentDir, "..", Path.Combine("..", "..")));
+            if (Window.BuildWindow.GameType == GameWindowType.Editor || Window.BuildWindow.GameType == GameWindowType.EditorBuild)
+            {
 
-            // Then combine with Assets
-            AssetDirectory = Path.Combine(twoLevelsUp, "Assets");
+                // Go back two folders
+                string twoLevelsUp = Path.GetFullPath(Path.Combine(currentDir, "..", Path.Combine("..", "..")));
 
-            Directory.CreateDirectory(AssetDirectory);
+                // Then combine with Assets
+                //Non hidden Assets
+                AssetDirectory = Path.Combine(twoLevelsUp, "Assets");
+                Directory.CreateDirectory(AssetDirectory);
+                AssetDirectory += Path.DirectorySeparatorChar;
 
-            AssetDirectory += Path.DirectorySeparatorChar;
+                //Hidden Assets
+                HiddenAssetDirectory = Path.Combine(twoLevelsUp, "HiddenAssets");
+                Directory.CreateDirectory(HiddenAssetDirectory);
+                HiddenAssetDirectory += Path.DirectorySeparatorChar;
+            }
         }
 
         public static void CreateEntityHiearchy()
@@ -49,12 +59,12 @@ namespace EngineInternal
             {
                 var entity = new Entity("New Entity");
 
-                using (var fs = File.Create(AssetDirectory + entity.GUID.ToString() + HIEARCHY_ENTITY))
+                using (var fs = File.Create(HiddenAssetDirectory + entity.GUID.ToString() + HIEARCHY_ENTITY))
                 {
                     var bytes = AssetSerializer.SerializeAsset(entity);
                     fs.Write(bytes);
                 }
-                using (var metafs = File.Create(AssetDirectory + entity.GUID.ToString() + ENTITY_METAFILE))
+                using (var metafs = File.Create(HiddenAssetDirectory + entity.GUID.ToString() + ENTITY_METAFILE))
                 {
                     var mFile = new EntityMetaFile();
 
@@ -71,8 +81,8 @@ namespace EngineInternal
         {
             if(Window.BuildWindow.GameType == GameWindowType.Editor)
             {
-                File.Delete(AssetDirectory + entityGuid.ToString() + HIEARCHY_ENTITY);
-                File.Delete(AssetDirectory + entityGuid.ToString() + ENTITY_METAFILE);
+                File.Delete(HiddenAssetDirectory + entityGuid.ToString() + HIEARCHY_ENTITY);
+                File.Delete(HiddenAssetDirectory + entityGuid.ToString() + ENTITY_METAFILE);
 
                 AssetRefresh?.Invoke();
             }
@@ -85,7 +95,7 @@ namespace EngineInternal
 
             if (Window.BuildWindow.GameType == GameWindowType.Editor)
             {
-                foreach(var file in Directory.GetFiles(AssetDirectory))
+                foreach(var file in Directory.GetFiles(HiddenAssetDirectory))
                 {
                     if (file.EndsWith(HIEARCHY_ENTITY))
                     {
@@ -115,7 +125,7 @@ namespace EngineInternal
 
         public static string GetCurrentSelectedEntityMetaPath()
         {
-            var files = Directory.GetFiles(AssetDirectory).Where(t => t.EndsWith(ENTITY_METAFILE));
+            var files = Directory.GetFiles(HiddenAssetDirectory).Where(t => t.EndsWith(ENTITY_METAFILE));
 
             foreach(var file in files)
             {
@@ -224,7 +234,7 @@ namespace EngineInternal
                     string className = script.name.Replace(".cs", "");
                     Type foundType = null;
 
-                    var metaFilePath = AssetDataBase.AssetDirectory + dsEntity.GUID.ToString() + AssetDataBase.ENTITY_METAFILE;
+                    var metaFilePath = AssetDataBase.HiddenAssetDirectory + dsEntity.GUID.ToString() + AssetDataBase.ENTITY_METAFILE;
                     if (!File.Exists(metaFilePath))
                     {
                         Console.WriteLine($"Warning: Meta file not found at {metaFilePath}");
