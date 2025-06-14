@@ -12,6 +12,9 @@ namespace EngineExclude
 {
     public class EditorHierarchy : BaseSubWindow
     {
+        public static Action OnSelectedEntity { get; set; }
+        public static Action OnPreSelectedEntity { get; set; }
+
         public EditorHierarchy() : base(true, false)
         {
             
@@ -43,13 +46,15 @@ namespace EngineExclude
 
                 if (ImGui.Selectable($"{entity.Name}", isSelected, ImGuiSelectableFlags.None))
                 {
+                    OnPreSelectedEntity?.Invoke();
                     ImGuiViewportUI.Current.SelectedEntity = entity;
-                    AssetDataBase.AssetRefresh?.Invoke();
+                    OnSelectedEntity?.Invoke();
                 }
                 if (ImGui.IsItemClicked(ImGuiMouseButton.Right))
                 {
+                    OnPreSelectedEntity?.Invoke();
                     ImGuiViewportUI.Current.SelectedEntity = entity;
-                    AssetDataBase.AssetRefresh?.Invoke();
+                    OnSelectedEntity?.Invoke();
                 }
 
                 if (EditorWindow.BuildWindow.IsMouseButtonPressed(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsItemHovered())
@@ -87,7 +92,7 @@ namespace EngineExclude
             {
                 if (ImGui.MenuItem("Create Entity"))
                 {
-                    AssetDataBase.CreateEntityHiearchy();
+                    AssetDataBase.CreateEntityInHiearchy();
                 }
                 if (ImGui.MenuItem("Cancel"))
                 {
@@ -102,7 +107,7 @@ namespace EngineExclude
             {
                 if (ImGui.MenuItem("Create Entity"))
                 {
-                    AssetDataBase.CreateEntityHiearchy();
+                    AssetDataBase.CreateEntityInHiearchy();
                 }
                 if (ImGui.MenuItem("Cancel"))
                 {

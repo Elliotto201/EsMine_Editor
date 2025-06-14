@@ -94,8 +94,8 @@ namespace EngineInternal
 
             if(type == GameWindowType.Editor || type == GameWindowType.EditorBuild)
             {
-                _ui = new ImGuiViewportUI();
                 _controller = new CustomImGuiController(ClientSize.X, ClientSize.Y);
+                _ui = new ImGuiViewportUI();
             }
         }
 

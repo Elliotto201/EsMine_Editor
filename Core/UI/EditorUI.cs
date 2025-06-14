@@ -82,18 +82,21 @@ namespace EngineExclude
         {
             Current = this;
 
-            EditorWindow.BuildWindow.Resize += BuildWindow_Resize; ;
+            EditorWindow.BuildWindow.Resize += BuildWindow_Resize;
 
             AssetDataBase.AssetRefresh += AssetRefresh;
-            AssetRefresh();
 
             if(EditorWindow.BuildWindow.GameType == GameWindowType.Editor)
             {
-                EditorWindows.Add(new EditorInspector());
                 EditorWindows.Add(new EditorFolder());
+                EditorWindows.Add(new EditorInspector());
                 EditorWindows.Add(new EditorHierarchy());
             }
             EditorWindows.Add(new EditorController());
+
+            //Important that you refresh after windows are loaded as the AsserRrefresh is dependant on the EditorHiearchy which is Reliant on EditorInspector.
+            //This is bad but for now im too tired to actually fix.
+            AssetRefresh();
         }
 
         private void BuildWindow_Resize(ResizeEventArgs obj)

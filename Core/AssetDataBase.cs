@@ -53,7 +53,7 @@ namespace EngineInternal
             }
         }
 
-        public static void CreateEntityHiearchy()
+        public static void CreateEntityInHiearchy()
         {
             if(EditorWindow.BuildWindow.GameType == GameWindowType.Editor)
             {
@@ -136,6 +136,35 @@ namespace EngineInternal
             }
 
             throw new Exception("Entity was not found");
+        }
+
+        public static void SetEntityMetaFields(Entity entity, string fieldName, object value)
+        {
+            var file = Directory.GetFiles(HiddenAssetDirectory).Where(t => t.Contains(entity.GUID.ToString())).Where(t => t.EndsWith(ENTITY_METAFILE)).ToList()[0];
+            byte[] bytes = File.ReadAllBytes(file);
+
+            var metaFile = JsonConvert.DeserializeObject<EntityMetaFile>(Encoding.UTF8.GetString(bytes));
+            metaFile.SerializedFields.Remove(fieldName);
+            metaFile.SerializedFields.Add(fieldName, value);
+
+            var newBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(metaFile));
+            File.WriteAllBytes(file, newBytes);
+        }
+
+        public static object GetEntityFieldValue(Entity entity, string fieldName)
+        {
+            var file = Directory.GetFiles(HiddenAssetDirectory).Where(t => t.Contains(entity.GUID.ToString())).Where(t => t.EndsWith(ENTITY_METAFILE)).ToList()[0];
+            byte[] bytes = File.ReadAllBytes(file);
+
+            var metaFile = JsonConvert.DeserializeObject<EntityMetaFile>(Encoding.UTF8.GetString(bytes));
+            if (metaFile.SerializedFields.ContainsKey(fieldName))
+            {
+                return metaFile.SerializedFields[fieldName];
+            }
+            else
+            {
+                return default;
+            }
         }
     }
 
@@ -279,8 +308,10 @@ namespace EngineInternal
                     {
                         throw new Exception($"Field 'Behaviours' not found in type '{eType.Name}'.");
                     }
+
                     info.SetValue(entity, behaviours);
                 }
+                Console.WriteLine(behaviours.Count);
 
                 return entity;
             }

@@ -42,7 +42,10 @@ namespace EngineExclude
             EntityInspectorUI.Add(dButton);
 
             LastSelectedEntityFields = new();
+
             AssetDataBase.AssetRefresh += AssetRefresh;
+            EditorHierarchy.OnSelectedEntity += EditInspectorData;
+            EditorHierarchy.OnPreSelectedEntity += SaveInspectorFields;
 
             LoadedScripts = AssetDataBase.LoadAllScripts();
         }
@@ -62,7 +65,11 @@ namespace EngineExclude
         private void AssetRefresh()
         {
             LoadedScripts = AssetDataBase.LoadAllScripts();
+            EditInspectorData();
+        }
 
+        private void EditInspectorData()
+        {
             if (ImGuiViewportUI.Current.SelectedEntity != null)
             {
                 LastSelectedEntityFields.Clear();
@@ -72,7 +79,36 @@ namespace EngineExclude
                 {
                     foreach (var field in behaviour.GetType().GetFields().Where(f => f.GetCustomAttribute<Export>() != null))
                     {
+                        var fieldType = field.FieldType;
+
                         LastSelectedEntityFields.Add(field);
+                        var fieldValue = AssetDataBase.GetEntityFieldValue(LastSelectedEntity, field.Name);
+                        object newFieldValue = fieldValue;
+
+                        if (fieldValue != null)
+                        {
+                            newFieldValue = Convert.ChangeType(fieldValue, fieldType);
+                        }
+
+                        field.SetValue(behaviour, newFieldValue);
+                    }
+                }
+            }
+        }
+
+        private void SaveInspectorFields()
+        {
+            if (ImGuiViewportUI.Current.SelectedEntity != null)
+            {
+                LastSelectedEntityFields.Clear();
+
+                LastSelectedEntity = ImGuiViewportUI.Current.SelectedEntity;
+                foreach (var behaviour in LastSelectedEntity.Behaviours)
+                {
+                    foreach (var field in behaviour.GetType().GetFields().Where(f => f.GetCustomAttribute<Export>() != null))
+                    {
+                        var fieldValue = field.GetValue(behaviour);
+                        AssetDataBase.SetEntityMetaFields(LastSelectedEntity, field.Name, fieldValue);
                     }
                 }
             }
@@ -98,20 +134,6 @@ namespace EngineExclude
 
             if(ImGuiViewportUI.Current.SelectedEntity != null)
             {
-                if(ImGuiViewportUI.Current.SelectedEntity != LastSelectedEntity)
-                {
-                    LastSelectedEntityFields.Clear();
-
-                    LastSelectedEntity = ImGuiViewportUI.Current.SelectedEntity;
-                    foreach (var behaviour in LastSelectedEntity.Behaviours)
-                    {
-                        foreach (var field in behaviour.GetType().GetFields().Where(f => f.GetCustomAttribute<Export>() != null))
-                        {
-                            LastSelectedEntityFields.Add(field);
-                        }
-                    }
-                }
-
                 if (ImGuiViewportUI.Current.SelectedEntity != null)
                 {
                     foreach (var ui in EntityInspectorUI)
@@ -123,7 +145,6 @@ namespace EngineExclude
                 ImGui.SetCursorPos(new Vector2(0, 0));
 
                 // Disable automatic scrolling to bottom
-                ImGui.SetScrollY(0);
 
                 foreach (var field in LastSelectedEntityFields)
                 {
@@ -228,19 +249,7 @@ namespace EngineExclude
                 return;
             }
 
-            // Get the current value
-            int output = (int)field.GetValue(targetBehaviour);
-
-            ImGui.PushID(field.Name);
-
-            ImGui.Text(field.Name);
-            if (ImGui.InputInt($"##{field.Name}", ref output, 1, 5, ImGuiInputTextFlags.NoUndoRedo | ImGuiInputTextFlags.CharsNoBlank))
-            {
-                field.SetValue(targetBehaviour, output);
-                Console.WriteLine($"Updated {field.Name} to {output} on {targetBehaviour.GetType().Name}");
-            }
-
-            ImGui.PopID();
+            InspectorFields.DrawField(field, targetBehaviour);
         }
 
         private void AddEntityBehaviour()
@@ -308,12 +317,17 @@ namespace EngineExclude
     }
 }
 
-public struct EntityMetaFile
+namespace EngineInternal
 {
-    public List<ScriptLoad> Scripts;
-
-    public EntityMetaFile()
+    public struct EntityMetaFile
     {
-        Scripts = new();
+        public List<ScriptLoad> Scripts;
+        public Dictionary<string, object> SerializedFields;
+
+        public EntityMetaFile()
+        {
+            Scripts = new();
+            SerializedFields = new();
+        }
     }
 }
