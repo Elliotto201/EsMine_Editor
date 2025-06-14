@@ -27,7 +27,7 @@ namespace EngineInternal
                 Flags = ContextFlags.Debug
             };
 
-            Window window = new Window(1280, 760, nativeWindowSettings, GameWindowType.Editor);
+            EditorWindow window = new EditorWindow(1280, 760, nativeWindowSettings, GameWindowType.Editor);
             window.Run();
         }
     }

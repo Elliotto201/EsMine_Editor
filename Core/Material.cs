@@ -34,7 +34,7 @@ public class Material
 
     public void ApplyFrame()
     {
-        int hasLocation = GL.GetUniformLocation(Window.BuildWindow.shaderProgram, "uHasTexture");
+        int hasLocation = GL.GetUniformLocation(EditorWindow.BuildWindow.shaderProgram, "uHasTexture");
         GL.Uniform1(hasLocation, HasTexture ? 1 : 0);
 
         if (HasTexture)
@@ -44,7 +44,7 @@ public class Material
         }
         else
         {
-            int colLocation = GL.GetUniformLocation(Window.BuildWindow.shaderProgram, "uColor");
+            int colLocation = GL.GetUniformLocation(EditorWindow.BuildWindow.shaderProgram, "uColor");
             GL.Uniform4(colLocation, Color);
         }
 

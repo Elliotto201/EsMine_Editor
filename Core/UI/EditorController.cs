@@ -11,17 +11,17 @@ using OpenTK.Windowing.Desktop;
 
 namespace EngineExclude
 {
-    public class EditorController : IEditorWindow
+    public class EditorController : BaseSubWindow
     {
-        private List<IEditorUI> ControllerUi = new();
+        private List<IEditorComponent> ControllerUi = new();
 
-        public EditorController()
+        public EditorController() : base(true, true)
         {
             ControllerUi = new();
 
-            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Play", true, false);
-            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Pause", true, false);
-            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + ((Window.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Exit", true, false);
+            var bPlay = new EButton(new Vector2(60, 60), new Vector2(-70 + ((EditorWindow.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Play", true, false);
+            var pPlay = new EButton(new Vector2(60, 60), new Vector2(0 + ((EditorWindow.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Pause", true, false);
+            var ePlay = new EButton(new Vector2(60, 60), new Vector2(70 + ((EditorWindow.BuildWindow.ClientSize.X / 2) - ImGuiViewportUI.InspectorBarSize), 30), "Exit", true, false);
 
             bPlay.OnClick += PlayEditor;
             ePlay.OnClick += ExitEditor;
@@ -29,14 +29,11 @@ namespace EngineExclude
             ControllerUi.Add(bPlay);
             ControllerUi.Add(pPlay);
             ControllerUi.Add(ePlay);
-
-            WhenToRender = GameWindowType.Editor;
-            OtherWhenToRender = GameWindowType.EditorBuild;
         }
 
-        public override void Render()
+        public override void RenderUI()
         {
-            ImGui.SetNextWindowSize(new Vector2(Window.BuildWindow.ClientSize.X - ImGuiViewportUI.InspectorBarSize * 2, ImGuiViewportUI.ControllerBarSize), ImGuiCond.Always);
+            ImGui.SetNextWindowSize(new Vector2(EditorWindow.BuildWindow.ClientSize.X - ImGuiViewportUI.InspectorBarSize * 2, ImGuiViewportUI.ControllerBarSize), ImGuiCond.Always);
             ImGui.SetNextWindowPos(new Vector2(ImGuiViewportUI.InspectorBarSize, 0), ImGuiCond.Always);
 
             ImGui.Begin("Controller",
@@ -58,9 +55,9 @@ namespace EngineExclude
 
         private void PlayEditor()
         {
-            if (Window.BuildWindow.GameType != GameWindowType.Editor) return;
+            if (EditorWindow.BuildWindow.GameType != GameWindowType.Editor) return;
 
-            Window.BuildWindow.Dispose();
+            EditorWindow.BuildWindow.Dispose();
 
             var nativeWindowSettings = new NativeWindowSettings()
             {
@@ -71,16 +68,16 @@ namespace EngineExclude
                 APIVersion = new Version(4, 3), // 👈 Must be 4.3 or higher
                 Flags = ContextFlags.Debug
             };
-            new Window(1280, 760, nativeWindowSettings, GameWindowType.EditorBuild).Run();
+            new EditorWindow(1280, 760, nativeWindowSettings, GameWindowType.EditorBuild).Run();
 
             Console.Write("Play");
         }
 
         private void ExitEditor()
         {
-            if (Window.BuildWindow.GameType != GameWindowType.EditorBuild) return;
+            if (EditorWindow.BuildWindow.GameType != GameWindowType.EditorBuild) return;
 
-            Window.BuildWindow.Dispose();
+            EditorWindow.BuildWindow.Dispose();
 
             var nativeWindowSettings = new NativeWindowSettings()
             {
@@ -91,7 +88,7 @@ namespace EngineExclude
                 APIVersion = new Version(4, 3), // 👈 Must be 4.3 or higher
                 Flags = ContextFlags.Debug
             };
-            new Window(1280, 760, nativeWindowSettings, GameWindowType.Editor).Run();
+            new EditorWindow(1280, 760, nativeWindowSettings, GameWindowType.Editor).Run();
 
             Console.Write("Exit");
         }

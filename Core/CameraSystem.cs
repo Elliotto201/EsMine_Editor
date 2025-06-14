@@ -14,12 +14,12 @@ public static class Camera
 
     static Camera()
     {
-        Window.BuildWindow.OnFrame += Update;
+        EditorWindow.BuildWindow.OnFrame += Update;
     }
 
     private static void Update()
     {
-        GL.Viewport(0, 0, Window.BuildWindow.ClientSize.X, Window.BuildWindow.ClientSize.Y);
+        GL.Viewport(0, 0, EditorWindow.BuildWindow.ClientSize.X, EditorWindow.BuildWindow.ClientSize.Y);
 
         CameraDirection = AzimuthElevationToUnitVector(AzimuthElevation);
         CurrentViewMatrix = GetViewMatrix();
@@ -30,7 +30,7 @@ public static class Camera
         var eye = CameraPosition;
         var target = CameraPosition + CameraDirection;
 
-        float aspect = Window.BuildWindow.ClientSize.X / (float)Math.Max(1, Window.BuildWindow.ClientSize.Y);
+        float aspect = EditorWindow.BuildWindow.ClientSize.X / (float)Math.Max(1, EditorWindow.BuildWindow.ClientSize.Y);
 
         return Matrix4.LookAt(eye, target, Vector3.UnitY) *
                Matrix4.CreatePerspectiveFieldOfView(

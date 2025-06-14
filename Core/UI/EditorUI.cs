@@ -58,14 +58,14 @@ namespace EngineExclude
         public Entity SelectedEntity;
         public IInspectorGUI CurrentSelectedGUI;
 
-        private List<IEditorWindow> EditorWindows = new();
+        private List<BaseSubWindow> EditorWindows = new();
 
         public static float ScaleByWindowSize(float input)
         {
             const float baseWidth = 1280f;
             const float baseHeight = 760f;
 
-            var size = Window.BuildWindow.ClientSize;
+            var size = EditorWindow.BuildWindow.ClientSize;
             float currentWidth = size.X;
             float currentHeight = size.Y;
 
@@ -82,12 +82,12 @@ namespace EngineExclude
         {
             Current = this;
 
-            Window.BuildWindow.Resize += BuildWindow_Resize; ;
+            EditorWindow.BuildWindow.Resize += BuildWindow_Resize; ;
 
             AssetDataBase.AssetRefresh += AssetRefresh;
             AssetRefresh();
 
-            if(Window.BuildWindow.GameType == GameWindowType.Editor)
+            if(EditorWindow.BuildWindow.GameType == GameWindowType.Editor)
             {
                 EditorWindows.Add(new EditorInspector());
                 EditorWindows.Add(new EditorFolder());
@@ -110,10 +110,7 @@ namespace EngineExclude
         {
             foreach (var window in EditorWindows)
             {
-                if (window.WhenToRender == Window.BuildWindow.GameType || window.OtherWhenToRender == Window.BuildWindow.GameType)
-                {
-                    window.Render();
-                }
+                window.Render();
             }
         }
 
@@ -123,16 +120,30 @@ namespace EngineExclude
         }
     }
 
-    public interface IEditorUI { public void Render(); }
-    public abstract class IEditorWindow
+    public interface IEditorComponent { public void Render(); }
+    public abstract class BaseSubWindow
     {
-        internal GameWindowType WhenToRender;
-        internal GameWindowType OtherWhenToRender;
+        protected bool RenderEditor;
+        protected bool RenderEditorBuild;
 
-        public abstract void Render();
+        public BaseSubWindow(bool _RenderInEditor, bool _RenderInEditorBuild)
+        {
+            RenderEditor = _RenderInEditor;
+            RenderEditorBuild = _RenderInEditorBuild;
+        }
+
+        public virtual void Render()
+        {
+            if (RenderEditor && EditorWindow.BuildWindow.GameType == GameWindowType.Editor || RenderEditorBuild && EditorWindow.BuildWindow.GameType == GameWindowType.EditorBuild)
+            {
+                RenderUI();
+            }
+        }
+
+        public abstract void RenderUI();
     }
 
-    public class EButton : IEditorUI
+    public class EButton : IEditorComponent
     {
         private bool pressedLastFrame = false;
         private bool UseTexture = false;
@@ -224,7 +235,7 @@ namespace EngineExclude
             const float baseWidth = 1280f;
             const float baseHeight = 760f;
 
-            var size = Window.BuildWindow.ClientSize;
+            var size = EditorWindow.BuildWindow.ClientSize;
             float currentWidth = size.X;
             float currentHeight = size.Y;
 
@@ -242,7 +253,7 @@ namespace EngineExclude
             const float baseWidth = 1280f;
             const float baseHeight = 760f;
 
-            var size = Window.BuildWindow.ClientSize;
+            var size = EditorWindow.BuildWindow.ClientSize;
             float currentWidth = size.X;
             float currentHeight = size.Y;
 
@@ -255,7 +266,7 @@ namespace EngineExclude
             return input * scale;
         }
     }
-    public class EColorBox : IEditorUI
+    public class EColorBox : IEditorComponent
     {
         public Vector2 Size { get; private set; }
         public Vector2 Position { get; private set; }

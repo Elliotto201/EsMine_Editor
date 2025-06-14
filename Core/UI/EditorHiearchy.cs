@@ -10,18 +10,17 @@ using System.Threading.Tasks;
 
 namespace EngineExclude
 {
-    public class EditorHierarchy : IEditorWindow
+    public class EditorHierarchy : BaseSubWindow
     {
-        public EditorHierarchy()
+        public EditorHierarchy() : base(true, false)
         {
-            WhenToRender = GameWindowType.Editor;
-            OtherWhenToRender = GameWindowType.Editor;
+            
         }
 
-        public override void Render()
+        public override void RenderUI()
         {
-            float windowWidth = Window.BuildWindow.ClientSize.X;
-            float windowHeight = Window.BuildWindow.ClientSize.Y;
+            float windowWidth = EditorWindow.BuildWindow.ClientSize.X;
+            float windowHeight = EditorWindow.BuildWindow.ClientSize.Y;
 
             ImGui.SetNextWindowPos(new Vector2(0, 0), ImGuiCond.Always);
             ImGui.SetNextWindowSize(new Vector2(ImGuiViewportUI.InspectorBarSize, windowHeight - ImGuiViewportUI.FolderBarSize), ImGuiCond.Always);
@@ -53,7 +52,7 @@ namespace EngineExclude
                     AssetDataBase.AssetRefresh?.Invoke();
                 }
 
-                if (Window.BuildWindow.IsMouseButtonPressed(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsItemHovered())
+                if (EditorWindow.BuildWindow.IsMouseButtonPressed(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsItemHovered())
                 {
                     entityContext = true;
 
@@ -79,7 +78,7 @@ namespace EngineExclude
                 ImGui.PopID();
             }
 
-            if (Window.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered() && !entityContext)
+            if (EditorWindow.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered() && !entityContext)
             {
                 ImGui.OpenPopup("Scene Menu");
             }

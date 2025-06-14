@@ -163,7 +163,7 @@ namespace EngineCore
         {
             if (pass > RenderPasses.Length - 1) return;
 
-            Window.BuildWindow.shaderProgram = RenderPasses[pass];
+            EditorWindow.BuildWindow.shaderProgram = RenderPasses[pass];
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, Ebo);
 
             // Calculate transformations
@@ -172,7 +172,7 @@ namespace EngineCore
             var normalMatrix = new Matrix3(model).Inverted().Transposed();
 
             // Send matrices and material to the shader
-            Window.SendMatricesToShader(RenderPasses[pass], model, projection, normalMatrix);
+            EditorWindow.SendMatricesToShader(RenderPasses[pass], model, projection, normalMatrix);
             Material?.ApplyFrame();
 
             // Bind the VAO and draw elements

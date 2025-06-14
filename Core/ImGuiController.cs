@@ -11,7 +11,7 @@ using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
 
 namespace EngineInternal
 {
-    public class ImGuiController : IDisposable
+    public class CustomImGuiController : IDisposable
     {
         private bool _frameBegun;
 
@@ -42,7 +42,7 @@ namespace EngineInternal
         /// <summary>
         /// Constructs a new ImGuiController.
         /// </summary>
-        public ImGuiController(int width, int height)
+        public CustomImGuiController(int width, int height)
         {
             _windowWidth = width;
             _windowHeight = height;

@@ -22,9 +22,9 @@ using OpenTK.Compute.OpenCL;
 
 namespace EngineInternal
 {
-    internal class Window : GameWindow
+    internal class EditorWindow : GameWindow
     {
-        ImGuiController _controller;
+        CustomImGuiController _controller;
 
         private Dictionary<string, string> CompiledShaders;
 
@@ -32,7 +32,7 @@ namespace EngineInternal
         public event Action ToBeDrawnMeshes;
         public event Action GameUpdate;
 
-        public static Window BuildWindow { get; private set; }
+        public static EditorWindow BuildWindow { get; private set; }
 
         public List<int> RenderPasses { get; private set; } = new(2);
         public List<RenderPass> ExecutableRenderPasses = new();
@@ -62,7 +62,7 @@ namespace EngineInternal
         ImGuiViewportUI _ui; // Add this field
 
         // Constructor
-        public Window(int x, int y, NativeWindowSettings setts, GameWindowType type)
+        public EditorWindow(int x, int y, NativeWindowSettings setts, GameWindowType type)
             : base(GameWindowSettings.Default, new NativeWindowSettings()
             {
                 Size = new Vector2i(x, y),
@@ -95,7 +95,7 @@ namespace EngineInternal
             if(type == GameWindowType.Editor || type == GameWindowType.EditorBuild)
             {
                 _ui = new ImGuiViewportUI();
-                _controller = new ImGuiController(ClientSize.X, ClientSize.Y);
+                _controller = new CustomImGuiController(ClientSize.X, ClientSize.Y);
             }
         }
 
@@ -225,7 +225,7 @@ namespace EngineInternal
 
             _ui.RenderUI(); // Use the single instance
             _controller.Render();
-            ImGuiController.CheckGLError("End of frame");
+            CustomImGuiController.CheckGLError("End of frame");
 
             SwapBuffers();
 
@@ -392,7 +392,7 @@ namespace EngineInternal
         }
     }
 
-    internal enum GameWindowType
+    public enum GameWindowType
     {
         Build,
         Editor,
@@ -412,7 +412,7 @@ namespace Rendering
             name = name.Replace(".frag", "");
 
             usablePrograms[name] = program;
-            EngineInternal.Window.BuildWindow.RenderPasses.Add(program);
+            EngineInternal.EditorWindow.BuildWindow.RenderPasses.Add(program);
         }
 
         public static int GetProgram(string name)
@@ -440,7 +440,7 @@ namespace EngineCore
 
         static Input()
         {
-            State = EngineInternal.Window.BuildWindow.KeyboardState;
+            State = EngineInternal.EditorWindow.BuildWindow.KeyboardState;
         }
 
         public static bool IsKeyDown(Keys key)

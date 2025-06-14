@@ -9,14 +9,11 @@ using System.Threading.Tasks;
 
 namespace EngineExclude
 {
-    public class EditorFolder : IEditorWindow
+    public class EditorFolder : BaseSubWindow
     {
-        public EditorFolder()
+        public EditorFolder() : base(true, false)
         {
-            WhenToRender = GameWindowType.Editor;
-            OtherWhenToRender = GameWindowType.Editor;
-
-            Window.BuildWindow.FileDrop += BuildWindow_FileDrop;
+            EditorWindow.BuildWindow.FileDrop += BuildWindow_FileDrop;
         }
 
         private void BuildWindow_FileDrop(OpenTK.Windowing.Common.FileDropEventArgs obj)
@@ -24,10 +21,10 @@ namespace EngineExclude
             
         }
 
-        public override void Render()
+        public override void RenderUI()
         {
-            float windowWidth = Window.BuildWindow.ClientSize.X;
-            float windowHeight = Window.BuildWindow.ClientSize.Y;
+            float windowWidth = EditorWindow.BuildWindow.ClientSize.X;
+            float windowHeight = EditorWindow.BuildWindow.ClientSize.Y;
             ImGui.SetNextWindowSize(new Vector2(windowWidth, ImGuiViewportUI.FolderBarSize), ImGuiCond.Always);
             ImGui.SetNextWindowPos(new Vector2(0, windowHeight - ImGuiViewportUI.FolderBarSize), ImGuiCond.Always);
 
@@ -39,7 +36,7 @@ namespace EngineExclude
                 ImGuiWindowFlags.NoFocusOnAppearing |
                 ImGuiWindowFlags.NoBringToFrontOnFocus);
 
-            if (Window.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered())
+            if (EditorWindow.BuildWindow.IsMouseButtonReleased(OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Button2) && ImGui.IsWindowHovered())
             {
                 ImGui.OpenPopup("File Menu");
             }

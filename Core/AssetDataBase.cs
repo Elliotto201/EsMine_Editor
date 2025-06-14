@@ -34,7 +34,7 @@ namespace EngineInternal
         {
             string currentDir = Directory.GetCurrentDirectory();
 
-            if (Window.BuildWindow.GameType == GameWindowType.Editor || Window.BuildWindow.GameType == GameWindowType.EditorBuild)
+            if (EditorWindow.BuildWindow.GameType == GameWindowType.Editor || EditorWindow.BuildWindow.GameType == GameWindowType.EditorBuild)
             {
 
                 // Go back two folders
@@ -55,7 +55,7 @@ namespace EngineInternal
 
         public static void CreateEntityHiearchy()
         {
-            if(Window.BuildWindow.GameType == GameWindowType.Editor)
+            if(EditorWindow.BuildWindow.GameType == GameWindowType.Editor)
             {
                 var entity = new Entity("New Entity");
 
@@ -79,7 +79,7 @@ namespace EngineInternal
         //deletes a Hiearchy Entity from memory and disk
         public static void DeleteEntityHiearch(Guid entityGuid)
         {
-            if(Window.BuildWindow.GameType == GameWindowType.Editor)
+            if(EditorWindow.BuildWindow.GameType == GameWindowType.Editor)
             {
                 File.Delete(HiddenAssetDirectory + entityGuid.ToString() + HIEARCHY_ENTITY);
                 File.Delete(HiddenAssetDirectory + entityGuid.ToString() + ENTITY_METAFILE);
@@ -93,7 +93,7 @@ namespace EngineInternal
         {
             List<Entity> entities = new List<Entity>();
 
-            if (Window.BuildWindow.GameType == GameWindowType.Editor)
+            if (EditorWindow.BuildWindow.GameType == GameWindowType.Editor)
             {
                 foreach(var file in Directory.GetFiles(HiddenAssetDirectory))
                 {

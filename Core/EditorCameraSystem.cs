@@ -20,14 +20,14 @@ namespace EngineExclude
 
         static EditorCamera()
         {
-            Window.BuildWindow.OnFrame += Update;
+            EditorWindow.BuildWindow.OnFrame += Update;
         }
 
         private static void Update()
         {
-            if (Window.BuildWindow.GameType != GameWindowType.EditorBuild) return;
+            if (EditorWindow.BuildWindow.GameType != GameWindowType.EditorBuild) return;
 
-            GL.Viewport(0, 0, Window.BuildWindow.ClientSize.X, Window.BuildWindow.ClientSize.Y);
+            GL.Viewport(0, 0, EditorWindow.BuildWindow.ClientSize.X, EditorWindow.BuildWindow.ClientSize.Y);
 
             float moveX = 0f;
             float moveZ = 0f;
@@ -41,7 +41,7 @@ namespace EngineExclude
             if (moveVector.X != 0f || moveVector.Z != 0f)
                 moveVector = moveVector.Normalized();
 
-            Vector2 currentMousePos = Window.BuildWindow.MousePosition;
+            Vector2 currentMousePos = EditorWindow.BuildWindow.MousePosition;
             if (firstMouse)
             {
                 lastMousePos = currentMousePos;
@@ -69,12 +69,12 @@ namespace EngineExclude
 
         private static Matrix4 GetViewMatrix()
         {
-            if (Window.BuildWindow.GameType != GameWindowType.EditorBuild) return Matrix4.Zero;
+            if (EditorWindow.BuildWindow.GameType != GameWindowType.EditorBuild) return Matrix4.Zero;
 
             var eye = CameraPosition;
             var target = CameraPosition + CameraDirection;
 
-            float aspect = Window.BuildWindow.ClientSize.X / (float)Math.Max(1, Window.BuildWindow.ClientSize.Y);
+            float aspect = EditorWindow.BuildWindow.ClientSize.X / (float)Math.Max(1, EditorWindow.BuildWindow.ClientSize.Y);
 
             return Matrix4.LookAt(eye, target, EngineCore.Vector3.UnitY) *
                    Matrix4.CreatePerspectiveFieldOfView(
@@ -86,7 +86,7 @@ namespace EngineExclude
 
         private static EngineCore.Vector3 AzimuthElevationToUnitVector(Vector2 azimuthElevation)
         {
-            if (Window.BuildWindow.GameType != GameWindowType.EditorBuild) return EngineCore.Vector3.UnitY;
+            if (EditorWindow.BuildWindow.GameType != GameWindowType.EditorBuild) return EngineCore.Vector3.UnitY;
 
             float azimuth = azimuthElevation.X;
             float elevation = azimuthElevation.Y;
